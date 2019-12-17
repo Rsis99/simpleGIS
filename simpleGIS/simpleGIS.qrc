@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/simpleGIS">
+        <file>shader/fragmentshader.frag</file>
+        <file>shader/vertexshader.vert</file>
+    </qresource>
+</RCC>
