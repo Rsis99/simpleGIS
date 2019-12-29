@@ -7,6 +7,8 @@ MainWindow::MainWindow(QWidget* parent)
 	//this->mapWidget =  ui->setupUi(this);
 	ui->setupUi(this);
 	this->mapWidget = this->ui->mapWidget;
+	//不然无法缩放，后期会具体看看是什么原因
+	this->setCentralWidget(this->mapWidget);
 	map = new CGeoMap("map1");
 	this->setWindowTitle(map->getPropertyValue("map_name").toString());
 

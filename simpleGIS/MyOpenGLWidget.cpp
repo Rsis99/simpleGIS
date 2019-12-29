@@ -14,10 +14,12 @@ void MyOpenGLWidget::receiveMapData(CGeoMap* map)
 	//开始绘制map...
 	int width = geo_maxX - geo_minX;
 	int height = geo_maxY - geo_minY;
+	this->width = this->size().width();
+	this->height = this->size().height();
 	this->resizeGL(width, height);
-	this->x_trans = int(-(geo_minX + geo_maxX) / 2);
-	this->y_trans = int(-(geo_minY + geo_maxY) / 2);
-	projection.translate(this->x_trans, this->y_trans, this->zoom);
+	//this->x_trans = int(-(geo_minX + geo_maxX) / 2);
+	//this->y_trans = int(-(geo_minY + geo_maxY) / 2);
+	//projection.translate(this->x_trans, this->y_trans, this->zoom);
 	this->draw_flag = true;
 	this->paintGL();
 }
@@ -62,8 +64,13 @@ void MyOpenGLWidget::resizeGL(int w, int h)
 	// 模型矩阵重置
 	projection.setToIdentity();
 	// 透视投影
-	qreal aspect = qreal(w) / qreal(h ? h : 1);
-	projection.perspective(90.0f, aspect, 1.0f, 100.0f);
+	//qreal aspect = qreal(w) / qreal(h ? h : 1);
+	//projection.perspective(90.0f, aspect, 1.0f, 100.0f);
+	//正交投影
+	projection.ortho(geo_minX, geo_maxX, geo_minY, geo_maxY, -100, 100);
+	//正交投影相关函数内容
+	//projection.ortho(int left, int right, int bottom, int top, int far, int near)
+	//初始化部分相当于给定义了一个具体的立方体窗口，只有物体在之内的部分才能显示
 }
 //暂时用不到下面两个
 void MyOpenGLWidget::drawMap(CGeoMap* map)
@@ -307,13 +314,24 @@ void MyOpenGLWidget::wheelEvent(QWheelEvent* event)
 	if (scale_zoom > 0)
 	{
 		//相当于拉进视角
-		this->projection.translate(0.0f, 0.0f, 0.5f);
+		//this->projection.translate(0.0f, 0.0f, 0.5f);
+		//相当于缩小视口，达到放大的效果
+		this->geo_maxX -= 1;
+		this->geo_maxY -= 1;
+		this->geo_minX += 1;
+		this->geo_minY += 1;
+		this->resizeGL(width, height);
 	}
 	//下滑缩小
 	else
 	{
 		//相当于拉远视角
-		this->projection.translate(0.0f, 0.0f, -0.5f);
+		//this->projection.translate(0.0f, 0.0f, -0.5f);
+		this->geo_maxX += 1;
+		this->geo_maxY += 1;
+		this->geo_minX -= 1;
+		this->geo_minY -= 1;
+		this->resizeGL(width, height);
 	}
 	update();
 }
@@ -334,7 +352,12 @@ void MyOpenGLWidget::mouseMoveEvent(QMouseEvent* event)
 	{
 		this->end_point = event->globalPos();
 		QPointF change_point = this->end_point - this->start_point;
-		this->projection.translate(change_point.x() / 10, -change_point.y() / 10, 0.0f);
+		//this->projection.translate(change_point.x() / 10, -change_point.y() / 10, 0.0f);
+		this->geo_maxX -= change_point.x() / 10;
+		this->geo_minX -= change_point.x() / 10;
+		this->geo_minY += change_point.y() / 10;
+		this->geo_maxY += change_point.y() / 10;
+		this->resizeGL(width, height);
 		update();
 		this->start_point = this->end_point;
 	}
@@ -349,6 +372,23 @@ void MyOpenGLWidget::mouseReleaseEvent(QMouseEvent* event)
 //窗口缩放事件
 void MyOpenGLWidget::resizeEvent(QResizeEvent* e)
 {
-
+	if (this->draw_flag == true)
+	{
+		//边界的范围也需要改变
+		float x_scale = (float)e->size().width() / (float)this->width;
+		float y_scale = (float)e->size().height() / (float)this->height;
+		this->width = e->size().width();
+		this->height = e->size().height();
+		//范围变更代码
+		float rect_W = geo_maxX - geo_minX;
+		float rect_H = geo_maxY - geo_minY;
+		//this->geo_maxX *= x_scale;
+		this->geo_maxX = this->geo_minX + rect_W * x_scale;
+		//this->geo_minX *= x_scale ;
+		//this->geo_minY *= y_scale;
+		this->geo_maxY = this->geo_minY + rect_H * y_scale;
+		this->resizeGL(width, height);
+		update();
+	}
 	//update();
 }
